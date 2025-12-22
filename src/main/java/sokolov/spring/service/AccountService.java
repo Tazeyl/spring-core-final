@@ -6,6 +6,8 @@ import sokolov.spring.memory.Memory;
 import sokolov.spring.model.Account;
 import sokolov.spring.model.User;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,41 +47,46 @@ public class AccountService {
 
     }
 
-    public void deposit(Long accountId, Integer money) {
+    public void deposit(Long accountId, BigDecimal money) {
         Account account = getAccount(accountId);
-        if (money <= 0) {
+        if (money.compareTo(BigDecimal.ZERO) <0) {
             throw new IllegalArgumentException("Money must be greater than 0");
         }
-        Integer amount = account.getMoneyAmount();
-        account.setMoneyAmount(amount + money);
+        BigDecimal amount = account.getMoneyAmount();
+        BigDecimal sum = amount.add(money);
+        account.setMoneyAmount(sum);
 
     }
 
-    public void transfer(Long senderAccountId, Long recipientAccountId, Integer money) {
+    public void transfer(Long senderAccountId, Long recipientAccountId, BigDecimal money) {
         Account senderAccount = getAccount(senderAccountId);
         Account recipientAccount = getAccount(recipientAccountId);
 
-        int commission = 0;
+        BigDecimal commission = BigDecimal.ZERO;
         if (!Objects.equals(senderAccount.getUserId(), recipientAccount.getUserId())) {
             // округление + потеря данных
-            commission = (int)( money * accountProperties.getTransferCommission() / 100);
+
+            commission = calculateDiscount(money, accountProperties.getTransferCommission());
         }
 
         withdraw(senderAccountId, money);
-        deposit(recipientAccountId, money - commission);
+        BigDecimal depositedWithoutCommission = money.subtract(commission);
+
+        deposit(recipientAccountId, depositedWithoutCommission);
 
     }
 
-    public void withdraw(Long accountId, Integer money) {
+    public void withdraw(Long accountId, BigDecimal money) {
         Account account = getAccount(accountId);
-        if (money <= 0) {
+        if (money.compareTo(BigDecimal.ZERO) <0) {
             throw new IllegalArgumentException("money must be greater than 0");
         }
-        Integer amount = account.getMoneyAmount();
-        if (money > amount) {
+        BigDecimal amount = account.getMoneyAmount();
+        if (money.compareTo( amount)>0) {
             throw new IllegalArgumentException("money must be less then amount an current account ");
         }
-        account.setMoneyAmount(amount - money);
+        BigDecimal newAmount = amount.subtract(money);
+        account.setMoneyAmount(newAmount);
     }
 
     private Account getAccount(Long accountId) {
@@ -91,5 +98,13 @@ public class AccountService {
                 throw  new IllegalArgumentException(String.format("not found account with id = %s",  accountId));
         }
         return account.get(0);
+    }
+
+    private BigDecimal calculateDiscount(BigDecimal original,
+                                        BigDecimal percent) {
+        BigDecimal percentDecimal = percent
+                .divide(new BigDecimal("100"), 4, RoundingMode.HALF_EVEN);
+        return original.multiply(percentDecimal)
+                .setScale(2, RoundingMode.HALF_EVEN);
     }
 }

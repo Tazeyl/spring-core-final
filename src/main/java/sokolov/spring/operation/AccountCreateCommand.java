@@ -22,7 +22,7 @@ public class AccountCreateCommand implements OperationCommand {
 
     @Override
     public void execute() {
-        System.out.println("Enter the user id for which to create an account:\n");
+        System.out.println("Enter the user id for which to create an account:");
         Long userId = commonScanner.getLong("user id");
         Account account = accountService.create(userId);
         User user = userService.getUser(account.getUserId());

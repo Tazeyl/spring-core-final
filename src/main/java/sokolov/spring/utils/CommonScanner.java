@@ -18,16 +18,8 @@ public class CommonScanner {
     public Long getLong(String param) {
         try {
             Long longId = scanner.nextLong();
+            scanner.nextLine(); // Очищаем буфер!
             return longId;
-        } catch (Exception ex) {
-            throw new IllegalArgumentException(String.format("%s must be integer", param));
-        }
-    }
-
-    public Integer getInteger(String param) {
-        try {
-            Integer nextInt = scanner.nextInt();
-            return nextInt;
         } catch (Exception ex) {
             throw new IllegalArgumentException(String.format("%s must be integer", param));
         }
@@ -51,4 +43,5 @@ public class CommonScanner {
     public String nextLine(){
         return scanner.nextLine();
     }
+
 }

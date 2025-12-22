@@ -1,14 +1,15 @@
 package sokolov.spring.model;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 public class Account {
 
     private Long id;
     private Long userId;
-    private Integer moneyAmount;
+    private BigDecimal moneyAmount;
 
-    public Account(Long id, Long userId, Integer moneyAmount) {
+    public Account(Long id, Long userId, BigDecimal moneyAmount) {
         this.id = id;
         this.userId = userId;
         this.moneyAmount = moneyAmount;
@@ -30,11 +31,11 @@ public class Account {
         this.userId = userId;
     }
 
-    public Integer getMoneyAmount() {
+    public BigDecimal getMoneyAmount() {
         return moneyAmount;
     }
 
-    public void setMoneyAmount(Integer moneyAmount) {
+    public void setMoneyAmount(BigDecimal moneyAmount) {
         this.moneyAmount = moneyAmount;
     }
 

@@ -17,7 +17,7 @@ public class AccountCloseCommand implements OperationCommand {
 
     @Override
     public void execute() {
-        System.out.println("Enter account ID to close:\n");
+        System.out.println("Enter account ID to close:");
         Long accountId = commonScanner.getLong("accountId");
         accountService.close(accountId);
         System.out.println("Account with ID= " + accountId + " has been closed. ");
