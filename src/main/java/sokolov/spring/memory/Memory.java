@@ -10,9 +10,9 @@ import java.util.List;
 @Component
 public class Memory {
 
-    List<User> users = new ArrayList<>();
+    private List<User> users = new ArrayList<>();
 
-    List<Account> accounts = new ArrayList<>();
+    private List<Account> accounts = new ArrayList<>();
 
     private Long idUser = 0L;
     private Long idAccount = 0L;
