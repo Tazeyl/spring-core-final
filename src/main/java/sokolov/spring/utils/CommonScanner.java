@@ -37,7 +37,7 @@ public class CommonScanner {
         try {
             String nextLine = scanner.nextLine();
             if (nextLine.isBlank()) {
-                throw new IllegalArgumentException(String.format("%s must be not null", param));
+                throw new IllegalArgumentException(String.format("%s must be not blank", param));
             }
             return nextLine;
         } catch (NoSuchElementException ex) {

@@ -6,6 +6,7 @@ import sokolov.spring.memory.Memory;
 import sokolov.spring.model.Account;
 import sokolov.spring.model.User;
 
+import java.util.List;
 import java.util.Objects;
 
 @Component
@@ -36,7 +37,7 @@ public class AccountService {
                 .filter(account1 -> !Objects.equals(account1.getId(), accountId))
                 .filter(account1 -> Objects.equals(account1.getUserId(), account.getUserId()))
                 .min((o1, o2) -> (int) (o1.getId() - o2.getId()))
-                .orElseThrow(() -> new IllegalArgumentException("Do not close first Account"));
+                .orElseThrow(() -> new IllegalArgumentException("Do not close single Account"));
         transfer(account.getId(), firstAccount.getId(), account.getMoneyAmount());
         User user = userService.getUser(account.getUserId());
         user.getAccounts().remove(account);
@@ -82,6 +83,13 @@ public class AccountService {
     }
 
     private Account getAccount(Long accountId) {
-        return memory.getAccounts().stream().filter(account1 -> Objects.equals(account1.getId(), accountId)).findFirst().orElseThrow(() -> new IllegalArgumentException("not found account with id = " + accountId));
+        List<Account> account = memory.getAccounts().stream().filter(account1 -> Objects.equals(account1.getId(), accountId)).toList();
+        if (account.size()> 1){
+            throw new IllegalArgumentException(String.format("found more than 1 account with id = %s", accountId) );
+        }
+        if (account.isEmpty()) {
+                throw  new IllegalArgumentException(String.format("not found account with id = %s",  accountId));
+        }
+        return account.get(0);
     }
 }
