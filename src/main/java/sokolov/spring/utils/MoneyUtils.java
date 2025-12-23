@@ -9,10 +9,15 @@ import java.math.RoundingMode;
 public class MoneyUtils {
 
     public static BigDecimal safeAmount(String amountStr) {
-        BigDecimal amount = new BigDecimal(amountStr);
-        if (amount.scale() > 4) {
-            throw new IllegalArgumentException("Scale too large");
+        try {
+
+            BigDecimal amount = new BigDecimal(amountStr);
+            if (amount.scale() > 4) {
+                throw new IllegalArgumentException("Scale too large");
+            }
+            return amount.setScale(2, RoundingMode.HALF_EVEN);
+        } catch (NumberFormatException ex){
+            throw new IllegalArgumentException("Input not BigDecimal");
         }
-        return amount.setScale(2, RoundingMode.HALF_EVEN);
     }
 }
