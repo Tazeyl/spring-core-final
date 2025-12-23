@@ -1,10 +1,12 @@
 package sokolov.spring.service;
 
+import jakarta.persistence.NoResultException;
+import org.hibernate.NonUniqueResultException;
 import org.springframework.stereotype.Component;
 import sokolov.spring.configuration.AccountProperties;
-import sokolov.spring.memory.Memory;
 import sokolov.spring.model.Account;
 import sokolov.spring.model.User;
+import sokolov.spring.utils.TransactionHelper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -13,48 +15,55 @@ import java.util.Objects;
 
 @Component
 public class AccountService {
-
-    private final Memory memory;
-
     private final AccountProperties accountProperties;
     private final UserService userService;
+    private final TransactionHelper transactionHelper;
 
-    public AccountService(Memory memory, AccountProperties accountProperties, UserService userService) {
-        this.memory = memory;
+
+    public AccountService(AccountProperties accountProperties, UserService userService, TransactionHelper transactionHelper) {
         this.accountProperties = accountProperties;
         this.userService = userService;
+        this.transactionHelper = transactionHelper;
     }
 
     public Account create(Long userId) {
         User user = userService.getUser(userId);
-        Account account = new Account(memory.getNextIdAccount(), userId, accountProperties.getDefaultAmount());
-        user.getAccounts().add(account);
-        memory.getAccounts().add(account);
+        Account account = new Account(user, accountProperties.getDefaultAmount());
+        account = save(account);
         return account;
     }
 
     public void close(Long accountId) {
         Account account = getAccount(accountId);
-        Account firstAccount = memory.getAccounts().stream()
+        Long userId = account.getUser().getId();
+        List<Account> accounts = getAccountsByUserId(userId);
+
+        Account firstAccount = accounts.stream()
                 .filter(account1 -> !Objects.equals(account1.getId(), accountId))
-                .filter(account1 -> Objects.equals(account1.getUserId(), account.getUserId()))
                 .min((o1, o2) -> (int) (o1.getId() - o2.getId()))
                 .orElseThrow(() -> new IllegalArgumentException("Do not close single Account"));
         transfer(account.getId(), firstAccount.getId(), account.getMoneyAmount());
-        User user = userService.getUser(account.getUserId());
-        user.getAccounts().remove(account);
-        memory.getAccounts().remove(account);
+
+        transactionHelper.executeInTransaction(session -> {
+            Account temp = session.merge(account);
+            session.remove(temp);
+        });
 
     }
 
     public void deposit(Long accountId, BigDecimal money) {
-        Account account = getAccount(accountId);
+
         if (money.compareTo(BigDecimal.ZERO) <0) {
             throw new IllegalArgumentException("Money must be greater than 0");
         }
-        BigDecimal amount = account.getMoneyAmount();
-        BigDecimal sum = amount.add(money);
-        account.setMoneyAmount(sum);
+        Account accountTemp = getAccount(accountId);
+        transactionHelper.executeInTransaction(session -> {
+            Account account = session.merge(accountTemp);
+            BigDecimal amount = account.getMoneyAmount();
+            BigDecimal sum = amount.add(money);
+            account.setMoneyAmount(sum);
+        });
+
 
     }
 
@@ -63,7 +72,7 @@ public class AccountService {
         Account recipientAccount = getAccount(recipientAccountId);
 
         BigDecimal commission = BigDecimal.ZERO;
-        if (!Objects.equals(senderAccount.getUserId(), recipientAccount.getUserId())) {
+        if (!Objects.equals(senderAccount.getUser(), recipientAccount.getUser())) {
             // округление + потеря данных
 
             commission = calculateDiscount(money, accountProperties.getTransferCommission());
@@ -77,27 +86,32 @@ public class AccountService {
     }
 
     public void withdraw(Long accountId, BigDecimal money) {
-        Account account = getAccount(accountId);
         if (money.compareTo(BigDecimal.ZERO) <0) {
             throw new IllegalArgumentException("money must be greater than 0");
         }
-        BigDecimal amount = account.getMoneyAmount();
-        if (money.compareTo( amount)>0) {
-            throw new IllegalArgumentException("money must be less then amount an current account ");
-        }
-        BigDecimal newAmount = amount.subtract(money);
-        account.setMoneyAmount(newAmount);
+        Account accountTemp = getAccount(accountId);
+        transactionHelper.executeInTransaction(session -> {
+            Account account = session.merge(accountTemp);
+
+            BigDecimal amount = account.getMoneyAmount();
+            if (money.compareTo( amount)>0) {
+                throw new IllegalArgumentException("money must be less then amount an current account ");
+            }
+            BigDecimal newAmount = amount.subtract(money);
+            account.setMoneyAmount(newAmount);
+        });
+
     }
 
     private Account getAccount(Long accountId) {
-        List<Account> account = memory.getAccounts().stream().filter(account1 -> Objects.equals(account1.getId(), accountId)).toList();
-        if (account.size()> 1){
-            throw new IllegalArgumentException(String.format("found more than 1 account with id = %s", accountId) );
+
+        Account account = transactionHelper.executeInTransaction(session -> {
+            return session.find(Account.class, accountId);
+        });
+        if (account == null) {
+            throw new IllegalArgumentException(String.format("not found account with id = %s", accountId));
         }
-        if (account.isEmpty()) {
-                throw  new IllegalArgumentException(String.format("not found account with id = %s",  accountId));
-        }
-        return account.get(0);
+        return account;
     }
 
     private BigDecimal calculateDiscount(BigDecimal original,
@@ -106,5 +120,22 @@ public class AccountService {
                 .divide(new BigDecimal("100"), 4, RoundingMode.HALF_EVEN);
         return original.multiply(percentDecimal)
                 .setScale(2, RoundingMode.HALF_EVEN);
+    }
+
+
+    private Account save(Account account){
+        return transactionHelper.executeInTransaction(session -> {
+            session.persist(account);
+            return account;
+        });
+    }
+
+
+    private List<Account> getAccountsByUserId(Long userId){
+        return transactionHelper.executeInTransaction(session -> {
+            return session.createQuery("select a from Account a where a.user.id = :userId", Account.class)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        });
     }
 }

@@ -1,17 +1,30 @@
 package sokolov.spring.model;
 
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
+@Entity
+@Table(name = "accounts")
 public class Account {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long userId;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
+    @Column(name = "amount")
     private BigDecimal moneyAmount;
 
-    public Account(Long id, Long userId, BigDecimal moneyAmount) {
-        this.id = id;
-        this.userId = userId;
+    public Account() {
+    }
+
+    public Account(User user, BigDecimal moneyAmount) {
+        this.user = user;
         this.moneyAmount = moneyAmount;
     }
 
@@ -23,12 +36,12 @@ public class Account {
         this.id = id;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public BigDecimal getMoneyAmount() {
@@ -43,7 +56,7 @@ public class Account {
     public String toString() {
         return "Account{" +
                 "id=" + id +
-                ", userId=" + userId +
+                ", userId=" + user.getId() +
                 ", moneyAmount=" + moneyAmount +
                 '}';
     }
