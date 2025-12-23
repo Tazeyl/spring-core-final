@@ -1,41 +1,66 @@
 package sokolov.spring.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import sokolov.spring.memory.Memory;
 import sokolov.spring.model.User;
+import sokolov.spring.utils.TransactionHelper;
 
 import java.util.List;
-import java.util.Objects;
 
 @Component
 public class UserService {
 
-    private final Memory memory;
     private final AccountService accountService;
+    private final TransactionHelper transactionHelper;
 
-    public UserService(Memory memory, @Lazy AccountService accountService) {
-        this.memory = memory;
+    public UserService(@Lazy AccountService accountService, TransactionHelper transactionHelper) {
+        this.transactionHelper = transactionHelper;
         this.accountService = accountService;
     }
 
     public User create(String login) {
-        if (memory.getUsers().stream().anyMatch(user -> Objects.equals(user.getLogin(), login))) {
+        if (!getUserByLogin(login).isEmpty()){
             throw new IllegalArgumentException(String.format("Exists user with login = %s", login));
         }
 
-        User user = new User(memory.getNextIdUser(), login);
-        memory.getUsers().add(user);
+        User user = new User(login);
+        user = save(user);
         accountService.create(user.getId());
-
         return user;
     }
 
     public List<User> getAllUsers() {
-        return memory.getUsers();
+        return transactionHelper.executeInTransaction(session -> {
+            return session.createQuery("SELECT u from User u" +
+                    " left join fetch u.accounts", User.class).getResultList();
+        });
     }
 
     public User getUser(Long id) {
-        return memory.getUsers().stream().filter(user1 -> Objects.equals(user1.getId(), id)).findFirst().orElseThrow(() -> new IllegalArgumentException(String.format("Not found user by id = %s", id)));
+        User user = transactionHelper.executeInTransaction(session -> {
+           return session.find(User.class, id);
+        });
+
+        if (user == null){
+            throw new EntityNotFoundException(String.format("User with id = %s not found", id));
+        }
+        return user;
+
+    }
+
+    private User save(User user){
+        return transactionHelper.executeInTransaction(session -> {
+            session.persist(user);
+            return user;
+        });
+    }
+
+    private List<User> getUserByLogin(String login){
+        return transactionHelper.executeInTransaction(session -> {
+            return session.createQuery("select u from User u where u.login = :login", User.class)
+                    .setParameter("login", login).getResultList();
+        });
+
     }
 }

@@ -1,18 +1,29 @@
 package sokolov.spring.model;
 
+import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Entity
+@Table(name = "users")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "login")
     private String login;
 
+    @OneToMany(mappedBy = "user")
     private List<Account> accounts = new ArrayList<>();
 
-    public User(Long id, String login) {
-        this.id = id;
+    public User() {
+    }
+
+    public User(String login) {
         this.login = login;
     }
 
