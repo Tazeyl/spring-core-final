@@ -31,22 +31,20 @@ public class UserService {
     }
 
     public List<User> getAllUsers() {
-        return transactionHelper.executeInTransaction(session -> {
-            return session.createQuery("SELECT u from User u" +
-                    " left join fetch u.accounts", User.class).getResultList();
-        });
+        return transactionHelper.executeInTransaction(session ->
+                session.createQuery("SELECT u from User u" +
+                        " left join fetch u.accounts", User.class).getResultList()
+        );
     }
 
     public User getUser(Long id) {
-        User user = transactionHelper.executeInTransaction(session -> {
-            return session.find(User.class, id);
+        return transactionHelper.executeInTransaction(session -> {
+            User user = session.find(User.class, id);
+            if (user == null) {
+                throw new EntityNotFoundException(String.format("User with id = %s not found", id));
+            }
+            return user;
         });
-
-        if (user == null) {
-            throw new EntityNotFoundException(String.format("User with id = %s not found", id));
-        }
-        return user;
-
     }
 
     private User save(User user) {
@@ -57,10 +55,10 @@ public class UserService {
     }
 
     private List<User> getUserByLogin(String login) {
-        return transactionHelper.executeInTransaction(session -> {
-            return session.createQuery("select u from User u where u.login = :login", User.class)
-                    .setParameter("login", login).getResultList();
-        });
+        return transactionHelper.executeInTransaction(session ->
+                session.createQuery("select u from User u where u.login = :login", User.class)
+                        .setParameter("login", login).getResultList()
+        );
 
     }
 }

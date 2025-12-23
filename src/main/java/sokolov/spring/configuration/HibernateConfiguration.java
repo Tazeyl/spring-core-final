@@ -22,7 +22,8 @@ public class HibernateConfiguration {
                 .setProperty("hibernate.connection.username", "postgres")
                 .setProperty("hibernate.connection.password", "postgres")
                 .setProperty("hibernate.show_sql", "true")
-                .setProperty("hibernate.hbm2ddl.auto", "update");
+                .setProperty("hibernate.hbm2ddl.auto", "update")
+                .setProperty("hibernate.current_session_context_class", "thread");
 
         return configuration.buildSessionFactory();
     }
