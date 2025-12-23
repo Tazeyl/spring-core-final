@@ -1,7 +1,5 @@
 package sokolov.spring.service;
 
-import jakarta.persistence.NoResultException;
-import org.hibernate.NonUniqueResultException;
 import org.springframework.stereotype.Component;
 import sokolov.spring.configuration.AccountProperties;
 import sokolov.spring.model.Account;
@@ -53,7 +51,7 @@ public class AccountService {
 
     public void deposit(Long accountId, BigDecimal money) {
 
-        if (money.compareTo(BigDecimal.ZERO) <0) {
+        if (money.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Money must be greater than 0");
         }
         Account accountTemp = getAccount(accountId);
@@ -86,7 +84,7 @@ public class AccountService {
     }
 
     public void withdraw(Long accountId, BigDecimal money) {
-        if (money.compareTo(BigDecimal.ZERO) <0) {
+        if (money.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("money must be greater than 0");
         }
         Account accountTemp = getAccount(accountId);
@@ -94,7 +92,7 @@ public class AccountService {
             Account account = session.merge(accountTemp);
 
             BigDecimal amount = account.getMoneyAmount();
-            if (money.compareTo( amount)>0) {
+            if (money.compareTo(amount) > 0) {
                 throw new IllegalArgumentException("money must be less then amount an current account ");
             }
             BigDecimal newAmount = amount.subtract(money);
@@ -115,7 +113,7 @@ public class AccountService {
     }
 
     private BigDecimal calculateDiscount(BigDecimal original,
-                                        BigDecimal percent) {
+                                         BigDecimal percent) {
         BigDecimal percentDecimal = percent
                 .divide(new BigDecimal("100"), 4, RoundingMode.HALF_EVEN);
         return original.multiply(percentDecimal)
@@ -123,7 +121,7 @@ public class AccountService {
     }
 
 
-    private Account save(Account account){
+    private Account save(Account account) {
         return transactionHelper.executeInTransaction(session -> {
             session.persist(account);
             return account;
@@ -131,7 +129,7 @@ public class AccountService {
     }
 
 
-    private List<Account> getAccountsByUserId(Long userId){
+    private List<Account> getAccountsByUserId(Long userId) {
         return transactionHelper.executeInTransaction(session -> {
             return session.createQuery("select a from Account a where a.user.id = :userId", Account.class)
                     .setParameter("userId", userId)

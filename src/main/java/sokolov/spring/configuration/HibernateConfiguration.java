@@ -10,7 +10,7 @@ import sokolov.spring.model.User;
 public class HibernateConfiguration {
 
     @Bean
-    public SessionFactory sessionFactory(){
+    public SessionFactory sessionFactory() {
         org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
 
         configuration

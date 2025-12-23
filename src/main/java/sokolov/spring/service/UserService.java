@@ -20,7 +20,7 @@ public class UserService {
     }
 
     public User create(String login) {
-        if (!getUserByLogin(login).isEmpty()){
+        if (!getUserByLogin(login).isEmpty()) {
             throw new IllegalArgumentException(String.format("Exists user with login = %s", login));
         }
 
@@ -39,24 +39,24 @@ public class UserService {
 
     public User getUser(Long id) {
         User user = transactionHelper.executeInTransaction(session -> {
-           return session.find(User.class, id);
+            return session.find(User.class, id);
         });
 
-        if (user == null){
+        if (user == null) {
             throw new EntityNotFoundException(String.format("User with id = %s not found", id));
         }
         return user;
 
     }
 
-    private User save(User user){
+    private User save(User user) {
         return transactionHelper.executeInTransaction(session -> {
             session.persist(user);
             return user;
         });
     }
 
-    private List<User> getUserByLogin(String login){
+    private List<User> getUserByLogin(String login) {
         return transactionHelper.executeInTransaction(session -> {
             return session.createQuery("select u from User u where u.login = :login", User.class)
                     .setParameter("login", login).getResultList();
