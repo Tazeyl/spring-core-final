@@ -16,7 +16,7 @@ public class MoneyUtils {
                 throw new IllegalArgumentException("Scale too large");
             }
             return amount.setScale(2, RoundingMode.HALF_EVEN);
-        } catch (NumberFormatException ex){
+        } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("Input not BigDecimal");
         }
     }

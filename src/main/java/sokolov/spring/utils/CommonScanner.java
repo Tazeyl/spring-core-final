@@ -40,7 +40,7 @@ public class CommonScanner {
     /**
      * Use in console listener without check
      */
-    public String nextLine(){
+    public String nextLine() {
         return scanner.nextLine();
     }
 

@@ -2,8 +2,8 @@ package sokolov.spring.operation;
 
 import org.springframework.stereotype.Component;
 import sokolov.spring.model.User;
-import sokolov.spring.utils.CommonScanner;
 import sokolov.spring.service.UserService;
+import sokolov.spring.utils.CommonScanner;
 
 @Component
 public class UserCreateCommand implements OperationCommand {
